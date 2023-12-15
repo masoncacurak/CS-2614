@@ -1,0 +1,246 @@
+FST, SKI         / Take first input
+  BUN FST        / No input
+  INP            / Input to AC
+  STA A          / Store input in A       
+
+
+SCD, SKI         / Take second input
+  BUN SCD        / No input
+  INP            / Input to AC
+  STA B          / Store input in B
+
+
+LETORNUMA, CLA   / Check if input A is letter or number   
+  LDA A          
+  ADD C          / Subtract 40 (neg = 0-9, pos = A-F)
+  SNA            / Skip next instruction if A is negative
+  BUN ELSA       / Branch to else 
+  CLA
+  LDA A
+  ADD D          / Subtract 30 to get decimal value of A
+  STA A          / Store decimal value in A
+  BUN ENDA
+ELSA, CLA
+  LDA A   
+  ADD E          / Subtract 37 to get decimal value of A
+  STA A          / Store decimal value in A
+ENDA, CLA
+
+           
+LETORNUMB, CLA   / Check if input B is letter or number    
+  LDA B          
+  ADD C          / Subtract 40 (neg = 0-9, pos = A-F)
+  SNA            / Skip next instruction if B is negative
+  BUN ELSB       / Branch to else 
+  CLA
+  LDA B
+  ADD D          / Subtract 30 to get decimal value of B
+  STA B          / Store decimal value in B
+  BUN ENDB
+ELSB, CLA
+  LDA B 
+  ADD E          / Subtract 37 to get decimal value of B
+  STA B          / Store decimal value in B
+ENDB, CLA
+
+
+TODEC, CLA       / Multiply first digit by 16 to convert to true decimal
+  LDA A 
+  ADD A          / Add A to itself 16 times
+  ADD A          / This is simulating multiplying A by 16
+  ADD A
+  ADD A
+  ADD A
+  ADD A
+  ADD A
+  ADD A 
+  ADD A
+  ADD A
+  ADD A
+  ADD A
+  ADD A
+  ADD A
+  ADD A
+  STA A          / Store actual decimal value in A 
+
+
+SET, CLA         / Add A and B to get sum of both decimal numbers
+  LDA A
+  ADD B
+  STA X          / Store sum of A and B in X
+  
+
+SEP1, CLA        / Checks if decimal is 1-digit, if so it stores the single digit
+  LDA X
+  ADD TEN
+  SNA
+  BUN SEP2
+  CLA
+  LDA X
+  STA DI1        / Div & mod not needed for 1-digit num
+  BUN DNE        
+SEP2, CLA        / Checks if decimal is 2-digits
+  LDA X
+  ADD HND
+  SNA 
+  BUN SEP3         
+SR1A, CLA        / Subroutines SR1A & SR1B separate the 2 digits by subtracting... 
+  LDA X          / ...10 every iteration until the number is no longer divisible... 
+  ADD TEN        / ...by 10, i.e. the rightmost digit, while simultaneously... 
+  SNA            / ...incrementing CTR which stores the leftmost digit
+  STA X
+  SPA
+  BUN SR1B
+  CLA 
+  LDA CTR
+  ADD ONE
+  STA CTR
+  BUN SR1A
+SR1B, CLA
+  LDA X
+  STA DI1
+  LDA CTR
+  STA DI2
+  BUN DNE
+SEP3, CLA        / Checks if X is 3-digits, is so, it separates and stores them         
+  LDA X
+  ADD TOU
+  SNA
+  BUN DNE
+SR2A, CLA        / Subroutine SR2A extracts the leftmost digit by subtracting 100...
+  LDA X          / ...from the number every iteration while simultaneously...
+  ADD HND        / ...incrementing CTR until it is no longer divisible by 100
+  SNA              
+  STA X
+  SPA
+  BUN SR2B
+  CLA
+  LDA CTR1
+  ADD ONE
+  STA CTR1
+  BUN SR2A
+SR2B, CLA        / Subroutine SR2B functions the same as subroutines SR1A & SR1B
+  LDA CTR1
+  STA DI3        
+  CLA
+  LDA X
+  ADD TEN
+  SNA
+  STA X
+  SPA 
+  BUN SR2C
+  CLA
+  LDA CTR2
+  ADD ONE
+  STA CTR2
+  BUN SR2B
+ SR2C, CLA 
+  LDA X
+  STA DI1
+  LDA CTR2
+  STA DI2                   
+  BUN DNE
+DNE, CLA
+
+
+MKECPYS, CLA     / Makes copies of the three individual digits
+  LDA DI1
+  STA CP1
+  CLA
+  LDA DI2
+  STA CP2
+  CLA
+  LDA DI3
+  STA CP3
+
+
+CMPlMT, CLA      / Converts copys into negative version of digits...
+  LDA CP1        / ... by taking the compliment & incrementing 
+  CMA
+  INC
+  STA CP1
+  CLA
+  LDA CP2
+  CMA
+  INC
+  STA CP2
+  CLA
+  LDA CP3
+  CMA
+  INC
+  STA CP3
+  CLA
+
+
+BIG1, CLA        / Compares up to 3 digits by subtracting each digit...    
+  LDA DI1        / ...by the negative copies of the other digits and...   
+  ADD CP2        / ...checking if the result is negative or positive
+  SPA 
+  BUN BIG2
+  CLA
+  LDA DI1
+  ADD CP3
+  SPA
+  BUN BIG3
+  CLA 
+  LDA DI1
+  STA LRG
+  BUN COMPLETE
+BIG2, CLA
+  LDA DI2
+  ADD CP3
+  SPA
+  BUN BIG4
+  CLA
+  LDA DI2
+  STA LRG
+  BUN COMPLETE
+BIG3, CLA
+  LDA DI3
+  ADD CP2
+  SPA
+  BUN BIG4
+  CLA
+  LDA DI3
+  STA LRG
+  BUN COMPLETE
+BIG4, CLA
+  LDA DI2
+  STA LRG
+COMPLETE, CLA
+  
+
+PRT, CLA         / Outputs the largest digit         
+  LDA LRG
+  ADD HEX30      / To convert back to ASCII
+  OUT
+  HLT
+  
+
+A, DEC 0         / Stores the first input 
+B, DEC 0         / Stores the second digit
+X, DEC 0         / Stores the sum of decimals A & B
+DI1, DEC 0       / Stores rightmost digit of output 
+DI2, DEC 0       / Stores middle digit of output 
+DI3, DEC 0       / Stores leftmost digit of output 
+CP1, DEC 0       / Copy of rightmost digit
+CP2, DEC 0       / Copy of middle digit
+CP3, DEC 0       / Copy of leftmost digit
+LRG, DEC 0       / Stores the largest digit
+
+C, HEX -40       / To check if letter or number
+D, HEX -30       / To convert from (number) char to dec
+E, HEX -37       / To convert from (letter) char to dec 
+HEX30, HEX 30    / To convert back to ASCII
+BGST, DEC 0      / To store the largest digit
+ONE, DEC 1       / To increment counters
+
+TEN, DEC -10     / For checking and isolating digits
+HND, DEC -100    / For checking and isolating digits
+TOU, DEC -1000   / For checking and isolating digits
+
+CTR, DEC 0       / Counter
+CTR1, DEC 0      / Counter
+CTR2, DEC 0      / Counter
+
+END
